@@ -71,6 +71,7 @@ export default class Main {
 
     private static async onProfileToken(): Promise<string> {
         const token = await Main.authProvider.getProfileToken(Main.mainWindow);
+        await Main.loadTarget();
         return token;
     };
 
