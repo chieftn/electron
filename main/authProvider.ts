@@ -55,7 +55,7 @@ export class AuthProvider {
      * Initialize request objects used by this AuthModule.
      */
     private setRequestObjects(): void {
-        const requestScopes =  ['openid', 'profile', 'User.Read'];
+        const requestScopes =  ['openid', 'profile'];
         const redirectUri = "https://login.microsoftonline.com/oauth2/nativeclient";
 
         const baseSilentRequest = {
@@ -76,7 +76,7 @@ export class AuthProvider {
 
         this.silentProfileRequest = {
             ...baseSilentRequest,
-            scopes: ["User.Read"],
+            scopes: [],
         };
     }
 
