@@ -13,11 +13,7 @@ import {
     AuthorizationUrlRequest,
     AuthenticationResult,
     SilentFlowRequest } from "@azure/msal-node";
-import { AuthCodeListener } from "./authCodeListener";
 import { BrowserWindow } from "electron";
-import { CustomFileProtocolListener } from "./authCustomProtocol";
-
-const CUSTOM_FILE_PROTOCOL_NAME = "msal";
 
 const MSAL_CONFIG: Configuration = {
     auth: {
@@ -44,8 +40,7 @@ export class AuthProvider {
     private authCodeUrlParams: AuthorizationUrlRequest;
     private authCodeRequest: AuthorizationCodeRequest;
     private silentProfileRequest: SilentFlowRequest;
-    private authCodeListener: AuthCodeListener;
-
+    
     constructor() {
         this.clientApplication = new PublicClientApplication(MSAL_CONFIG);
         this.account = null;
@@ -60,8 +55,8 @@ export class AuthProvider {
      * Initialize request objects used by this AuthModule.
      */
     private setRequestObjects(): void {
-        const requestScopes =  ['openid', 'profile', 'User.Read'];
-        const redirectUri = "msal://redirect";
+        const requestScopes =  ['openid', 'profile'];
+        const redirectUri = "https://login.microsoftonline.com/oauth2/nativeclient";
 
         const baseSilentRequest = {
             account: null,
@@ -81,7 +76,7 @@ export class AuthProvider {
 
         this.silentProfileRequest = {
             ...baseSilentRequest,
-            scopes: ["User.Read"],
+            scopes: [],
         };
     }
 
@@ -114,8 +109,6 @@ export class AuthProvider {
     async getTokenInteractive(authWindow: BrowserWindow, tokenRequest: AuthorizationUrlRequest ): Promise<AuthenticationResult> {
         const authCodeUrlParams = { ...this.authCodeUrlParams, scopes: tokenRequest.scopes };
         const authCodeUrl = await this.clientApplication.getAuthCodeUrl(authCodeUrlParams);
-        this.authCodeListener = new CustomFileProtocolListener(CUSTOM_FILE_PROTOCOL_NAME);
-        this.authCodeListener.start();
         const authCode = await this.listenForAuthCode(authCodeUrl, authWindow);
         const authResult = await this.clientApplication.acquireTokenByCode({ ...this.authCodeRequest, scopes: tokenRequest.scopes, code: authCode});
         return authResult;
@@ -148,7 +141,9 @@ export class AuthProvider {
                 try {
                     const parsedUrl = new URL(responseUrl);
                     const authCode = parsedUrl.searchParams.get('code');
-                    resolve(authCode);
+                    if(authCode) {
+                        resolve(authCode);
+                    }
                 } catch (err) {
                     reject(err);
                 }
